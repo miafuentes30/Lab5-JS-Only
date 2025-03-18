@@ -1,146 +1,683 @@
+<!DOCTYPE html>
 <html>
   <head>
+    <title>Pac-Man Chat</title>
   </head>
   <body>
     <script type="application/javascript">
+
       const getMessages = async () => {
-        const response = await fetch('https://chat.calicheoficial.lat/messages');
-        return await response.json();
-    };
-    
-    const postMessage = async (message) => {
-        const response = await fetch('https://chat.calicheoficial.lat/messages', {
+        try {
+          const response = await fetch('https://chat.calicheoficial.lat/messages');
+          return await response.json();
+        } catch (error) {
+          console.error('Error al obtener mensajes:', error);
+          return [];
+        }
+      };
+      
+      const postMessage = async (message) => {
+        try {
+          const response = await fetch('https://chat.calicheoficial.lat/messages', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(message)
-        });
-        return await response.json();
-    };
-    
-    const createMessageElement = (message) => {
-        const li = document.createElement('li');
-        li.style.padding = '10px';
-        li.style.borderBottom = '1px solid #ddd';
-        li.style.animation = 'fadeIn 0.5s';
-    
-        const user = document.createElement('strong');
-        user.append(`${message.user}: `);
-    
-        const text = document.createElement('span');
-        text.innerHTML = detectLinks(message.text);
-    
-        li.append(user, text);
-        return li;
-    };
-    
-    // Función para detectar enlaces y mostrar previsualizaciones
+          });
+          return await response.json();
+        } catch (error) {
+          console.error('Error al enviar mensaje:', error);
+          return null;
+        }
+      };
+
     const detectLinks = (text) => {
-        const imageRegex = /(https?:\/\/.*\.(?:png|jpg|jpeg|gif))/gi;
-        const urlRegex = /(https?:\/\/[^\s]+)/gi;
-    
-        if (text.match(imageRegex)) {
-            return text.replace(imageRegex, `<br><img src="$1" style="max-width:200px; display:block;">`);
+    const imageRegex = /(https?:\/\/.*\.(?:png|jpg|jpeg|gif))/gi;
+    const urlRegex = /(https?:\/\/[^\s]+)/gi;
+
+    if (text.match(imageRegex)) {
+        return text.replace(imageRegex, (match) => {
+        return `<div style="margin-top: 10px;">
+            <a href="${match}" target="_blank" style="color: #00FFDE; text-decoration: underline;">
+            ${match}
+            </a>
+            <div style="margin-top: 5px; border-radius: 8px; overflow: hidden; box-shadow: 0 0 10px rgba(255, 255, 0, 0.5);">
+            <img src="${match}" style="max-width: 200px; max-height: 150px; display: block; border-radius: 8px; transition: all 0.3s;" 
+                onmouseover="this.style.transform='scale(1.05)'" 
+                onmouseout="this.style.transform='scale(1)'" 
+                onload="this.parentElement.style.background='rgba(0, 0, 0, 0.2)'">
+            </div>
+        </div>`;
+        });
+    }
+
+    return text.replace(urlRegex, (match) => {
+        return `<div style="margin-top: 10px;">
+        <a href="${match}" target="_blank" style="color: #00FFDE; text-decoration: underline; transition: all 0.3s;"
+            onmouseover="this.style.color='#FFFF00'" 
+            onmouseout="this.style.color='#00FFDE'">
+            ${match}
+        </a>
+        <div style="margin-top: 5px; padding: 8px; border-radius: 8px; background: rgba(0, 0, 0, 0.2); box-shadow: 0 0 10px rgba(255, 255, 0, 0.3);">
+            <div style="font-size: 12px; color: #FFFFFF;">${match}</div>
+        </div>
+        </div>`;
+    });
+    };
+
+
+        const createMainElements = () => {
+        const gameContainer = document.createElement('div');
+        gameContainer.id = 'game-container';
+        gameContainer.style.position = 'fixed';
+        gameContainer.style.top = '0';
+        gameContainer.style.left = '0';
+        gameContainer.style.width = '100%';
+        gameContainer.style.height = '100%';
+        gameContainer.style.overflow = 'hidden';
+        gameContainer.style.fontFamily = "'Press Start 2P', monospace, Arial";
+        gameContainer.style.fontSize = '14px';
+        gameContainer.style.transition = 'background-color 0.5s';
+        
+        // Título
+        const header = document.createElement('div');
+        header.style.textAlign = 'center';
+        header.style.padding = '10px';
+        header.style.fontSize = '24px';
+        header.style.fontWeight = 'bold';
+        header.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.5)';
+        header.style.marginBottom = '10px';
+        header.textContent = 'CHAT de la class';
+        
+        gameContainer.appendChild(header);
+        document.body.appendChild(gameContainer);
+        
+        // Cargar fuente estilo Pac-Man
+        const font = document.createElement('link');
+        font.rel = 'stylesheet';
+        font.href = 'https://cdnjs.cloudflare.com/ajax/libs/webfont/1.6.28/webfontloader.js';
+        document.head.appendChild(font);
+        
+        // Inicializar WebFont
+        const webfontScript = document.createElement('script');
+        webfontScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/webfont/1.6.28/webfontloader.js';
+        
+        webfontScript.onload = function() {
+            WebFont.load({
+            google: {
+                families: ['Press Start 2P']
+            }
+            });
+        };
+        
+        document.head.appendChild(webfontScript);
+        };
+      
+      // Crear a los fantasmitas
+      const createGhosts = () => {
+        const ghostColors = ['#FF0000', '#00FFDE', '#FFB8DE', '#FFB847'];
+        const ghostNames = ['Blinky', 'Inky', 'Pinky', 'Clyde'];
+        
+        for (let i = 0; i < ghostColors.length; i++) {
+          const ghost = document.createElement('div');
+          ghost.className = 'ghost';
+          ghost.title = ghostNames[i];
+          ghost.style.position = 'absolute';
+          ghost.style.width = '30px';
+          ghost.style.height = '30px';
+          ghost.style.borderRadius = '15px 15px 0 0';
+          ghost.style.background = ghostColors[i];
+          ghost.style.boxShadow = `0 0 10px ${ghostColors[i]}`;
+          ghost.style.top = `${50 + Math.random() * 200}px`;
+          ghost.style.left = `${Math.random() * 90}%`;
+          ghost.style.zIndex = '1';
+          ghost.style.animation = `ghostMove ${5 + Math.random() * 10}s infinite linear`;
+          
+          // ojos
+          const eyes = document.createElement('div');
+          eyes.style.position = 'relative';
+          eyes.style.top = '5px';
+          eyes.style.display = 'flex';
+          eyes.style.justifyContent = 'space-around';
+          
+          for (let e = 0; e < 2; e++) {
+            const eye = document.createElement('div');
+            eye.style.width = '8px';
+            eye.style.height = '8px';
+            eye.style.borderRadius = '50%';
+            eye.style.background = 'white';
+            eye.style.position = 'relative';
+            
+            const pupil = document.createElement('div');
+            pupil.style.width = '4px';
+            pupil.style.height = '4px';
+            pupil.style.borderRadius = '50%';
+            pupil.style.background = 'black';
+            pupil.style.position = 'absolute';
+            pupil.style.top = '2px';
+            pupil.style.left = '2px';
+            
+            eye.appendChild(pupil);
+            eyes.appendChild(eye);
+          }
+          
+          // cabecita
+          const base = document.createElement('div');
+          base.style.position = 'absolute';
+          base.style.bottom = '-10px';
+          base.style.width = '100%';
+          base.style.height = '10px';
+          
+          for (let w = 0; w < 3; w++) {
+            const wave = document.createElement('div');
+            wave.style.position = 'absolute';
+            wave.style.bottom = '0';
+            wave.style.width = '10px';
+            wave.style.height = '10px';
+            wave.style.borderRadius = '0 0 50% 50%';
+            wave.style.background = ghostColors[i];
+            wave.style.left = `${w * 10}px`;
+            base.appendChild(wave);
+          }
+          
+          ghost.appendChild(eyes);
+          ghost.appendChild(base);
+          document.body.appendChild(ghost);
+          
+          // Animación
+          const keyframes = `
+            @keyframes ghostMove {
+              0% { transform: translateX(0) translateY(0); }
+              25% { transform: translateX(${Math.random() * 50}px) translateY(${Math.random() * 50}px); }
+              50% { transform: translateX(${Math.random() * -50}px) translateY(${Math.random() * 50}px); }
+              75% { transform: translateX(${Math.random() * -50}px) translateY(${Math.random() * -50}px); }
+              100% { transform: translateX(0) translateY(0); }
+            }
+          `;
+          
+          const styleSheet = document.createElement('style');
+          styleSheet.type = 'text/css';
+          styleSheet.innerHTML = keyframes;
+          document.head.appendChild(styleSheet);
+        }
+      };
+      
+      // Crear al Pac-Man (Se consulto con claude como mejorar la animación y como agregarle la boca al pac man ya que no aparecia)
+      const createPacman = () => {
+        const pacman = document.createElement('div');
+        pacman.className = 'pacman';
+        pacman.style.position = 'absolute';
+        pacman.style.width = '40px';
+        pacman.style.height = '40px';
+        pacman.style.borderRadius = '50%';
+        pacman.style.background = '#FFFF00';
+        pacman.style.boxShadow = '0 0 10px #FFFF00';
+        pacman.style.bottom = '80px';
+        pacman.style.left = '20px';
+        pacman.style.zIndex = '2';
+        pacman.style.animation = 'pacmanMove 15s infinite linear';
+        pacman.style.transformOrigin = 'center';
+      
+        // Cuerpo
+        const pacmanBody = document.createElement('div');
+        pacmanBody.className = 'pacman-body';
+        pacmanBody.style.width = '100%';
+        pacmanBody.style.height = '100%';
+        pacmanBody.style.position = 'relative';
+        pacmanBody.style.backgroundColor = '#FFFF00';
+        pacmanBody.style.borderRadius = '50%';
+        pacmanBody.style.boxShadow = '0 0 10px rgba(255, 255, 0, 0.7)';
+      
+        // La boca de Pac-Man - Triángulo volteado hacia adentro (Cluade ayudó a generar esta parte)
+        const pacmanMouth = document.createElement('div');
+        pacmanMouth.className = 'pacman-mouth';
+        pacmanMouth.style.position = 'absolute';
+        pacmanMouth.style.width = '0';
+        pacmanMouth.style.height = '0';
+        pacmanMouth.style.right = '-8px'; // Ajustado para que se vea correctamente
+        pacmanMouth.style.top = '50%';
+        pacmanMouth.style.transform = 'translateY(-50%)';
+        pacmanMouth.style.borderTop = '10px solid transparent';
+        pacmanMouth.style.borderRight = '20px solid #000030'; // Cambiado de borderLeft a borderRight
+        pacmanMouth.style.borderBottom = '10px solid transparent';
+        pacmanMouth.style.animation = 'chompChomp 0.3s infinite';
+      
+        // Ojo
+        const pacmanEye = document.createElement('div');
+        pacmanEye.className = 'pacman-eye';
+        pacmanEye.style.position = 'absolute';
+        pacmanEye.style.width = '6px';
+        pacmanEye.style.height = '6px';
+        pacmanEye.style.backgroundColor = '#000000';
+        pacmanEye.style.borderRadius = '50%';
+        pacmanEye.style.top = '10px';
+        pacmanEye.style.right = '15px';
+      
+        pacmanBody.appendChild(pacmanEye);
+        pacmanBody.appendChild(pacmanMouth);
+        pacman.appendChild(pacmanBody);
+        document.body.appendChild(pacman);
+      
+        // Animaciones
+        const keyframes = `
+          @keyframes pacmanMove {
+            0% { transform: translateX(0); }
+            45% { transform: translateX(calc(100vw - 70px)); }
+            50% { transform: translateX(calc(100vw - 70px)) rotateY(180deg); }
+            95% { transform: translateX(0) rotateY(180deg); }
+            100% { transform: translateX(0) rotateY(0deg); }
+          }
+          
+          @keyframes chompChomp {
+            0% { transform: translateY(-50%) scaleX(1); }
+            50% { transform: translateY(-50%) scaleX(0.5); }
+            100% { transform: translateY(-50%) scaleX(1); }
+          }
+        `;
+      
+        const styleSheet = document.createElement('style');
+        styleSheet.type = 'text/css';
+        styleSheet.innerHTML = keyframes;
+        document.head.appendChild(styleSheet);
+      
+        // Ajustar el color de la boca según el tema (claude)
+        const updateMouthColor = () => {
+          const theme = localStorage.getItem('theme') || 'dark';
+          pacmanMouth.style.borderRight = theme === 'dark' ? '20px solid #000030' : '20px solid #87CEEB';
+        };
+      
+        updateMouthColor();
+      
+        document.addEventListener('themeChanged', updateMouthColor);
+      };
+
+      // Crear dots 
+      const createDots = () => {
+        for (let i = 0; i < 20; i++) {
+          const dot = document.createElement('div');
+          dot.className = 'dot';
+          dot.style.position = 'absolute';
+          dot.style.width = '8px';
+          dot.style.height = '8px';
+          dot.style.borderRadius = '50%';
+          dot.style.background = '#FFFFFF';
+          dot.style.boxShadow = '0 0 5px #FFFFFF';
+          dot.style.top = `${Math.random() * 90}%`;
+          dot.style.left = `${Math.random() * 90}%`;
+          dot.style.zIndex = '1';
+          
+          document.body.appendChild(dot);
+        }
+      };
+      
+      // Fondo
+      const createMaze = () => {
+        const maze = document.createElement('div');
+        maze.className = 'maze';
+        maze.style.position = 'absolute';
+        maze.style.top = '0';
+        maze.style.left = '0';
+        maze.style.width = '100%';
+        maze.style.height = '100%';
+        maze.style.zIndex = '0';
+        maze.style.backgroundImage = 'radial-gradient(#3030FF 1px, transparent 2px)';
+        maze.style.backgroundSize = '20px 20px';
+        maze.style.opacity = '0.3';
+        
+        document.body.appendChild(maze);
+      };
+      
+      // Mensajes
+      const createMessageElement = (message) => {
+        const { user, text } = message;
+        
+        const li = document.createElement('li');
+        li.style.padding = '12px';
+        li.style.margin = '8px 0';
+        li.style.borderRadius = '8px';
+        li.style.background = 'rgba(0, 0, 0, 0.6)';
+        li.style.backdropFilter = 'blur(5px)';
+        li.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.5)';
+        li.style.transition = 'all 0.3s';
+        li.style.animation = 'fadeIn 0.5s';
+        li.style.display = 'flex';
+        li.style.flexDirection = 'column';
+        
+        // Nombre de usuario
+        const userElement = document.createElement('div');
+        userElement.style.fontWeight = 'bold';
+        userElement.style.marginBottom = '5px';
+        userElement.style.color = '#FFFF00';
+        userElement.textContent = user;
+        
+        // Texto
+        const textElement = document.createElement('div');
+        textElement.style.wordBreak = 'break-word';
+        textElement.innerHTML = detectLinks(text);
+        li.appendChild(userElement);
+        li.appendChild(textElement);
+        
+        li.addEventListener('mouseenter', () => {
+          li.style.transform = 'scale(1.02)';
+          li.style.boxShadow = '0 5px 15px rgba(255, 255, 0, 0.3)';
+        });
+        
+        li.addEventListener('mouseleave', () => {
+          li.style.transform = 'scale(1)';
+          li.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.5)';
+        });
+        
+        return li;
+      };
+      
+      
+      // Visualizacion de los mensajes
+      const drawMessages = async () => {
+        // Obtener o crear el contenedor de mensajes
+        let container = document.getElementById('messages-container');
+        let wasAtBottom = false;
+        
+        if (container) {
+          // Guardar la posición del scroll antes de actualizar
+          wasAtBottom = (container.scrollTop + container.clientHeight) >= (container.scrollHeight - 10);
+        } else {
+          container = document.createElement('div');
+          container.id = 'messages-container';
+          container.style.position = 'fixed';
+          container.style.top = '60px';
+          container.style.left = '0';
+          container.style.right = '0';
+          container.style.bottom = '70px';
+          container.style.margin = '0 auto';
+          container.style.maxWidth = '800px';
+          container.style.width = '90%';
+          container.style.padding = '10px';
+          container.style.overflowY = 'auto';
+          container.style.zIndex = '10';
+          container.style.scrollBehavior = 'smooth';
+          
+          document.body.appendChild(container);
         }
         
-        return text.replace(urlRegex, `<a href="$1" target="_blank">$1</a>`);
-    };
-    
-    const drawMessages = async () => {
-        const container = document.getElementById('messages-container') || document.createElement('div');
-        container.id = 'messages-container';
-        container.style.height = '70vh';
-        container.style.overflowY = 'auto';
-        container.innerHTML = '';
-    
+        // Crear o actualizar la lista de mensajes
         const ul = document.createElement('ul');
         ul.style.listStyle = 'none';
         ul.style.padding = '0';
-    
-        const messages = await getMessages();
-        messages.forEach((message) => ul.appendChild(createMessageElement(message)));
-    
-        container.appendChild(ul);
-        document.body.appendChild(container);
-        container.scrollTop = container.scrollHeight; // Mantener scroll abajo
-    };
-    
-    const drawInput = () => {
-        const container = document.getElementById('input-container') || document.createElement('div');
+        ul.style.margin = '0';
+        
+        try {
+          const messages = await getMessages();
+          messages.forEach((message) => ul.appendChild(createMessageElement(message)));
+          
+          // Limpiar y añadir nuevos mensajes
+          container.innerHTML = '';
+          container.appendChild(ul);
+          
+          // Restaurar la posición del scroll
+          if (wasAtBottom) {
+            container.scrollTop = container.scrollHeight;
+          }
+        } catch (error) {
+          console.error('Error mensajes:', error);
+        }
+      };
+      
+      // Crear y gestionar el campo de entrada
+      const drawInput = () => {
+        const container = document.createElement('div');
         container.id = 'input-container';
         container.style.position = 'fixed';
         container.style.bottom = '0';
+        container.style.left = '0';
         container.style.width = '100%';
-        container.style.background = 'white';
         container.style.padding = '10px';
         container.style.display = 'flex';
-        container.style.borderTop = '1px solid #ccc';
-    
-        const textarea = document.createElement('input');
-        textarea.type = 'text';
-        textarea.placeholder = 'Escribe un mensaje...(140 palabras)';
-        textarea.style.flex = '1';
-        textarea.style.padding = '10px';
-        textarea.style.border = '1px solid #ccc';
-        textarea.style.borderRadius = '5px';
-        textarea.maxLength = 140; // Límite de caracteres
-    
-        const button = document.createElement('button');
-        button.append('SEND');
-        button.style.marginLeft = '10px';
-        button.style.padding = '10px';
-    
-        button.onclick = async () => {
-            if (textarea.value.trim()) {
-                await postMessage({ text: textarea.value, user: 'miausUwu' });
-                textarea.value = '';
-                await drawMessages();
-            }
-        };
-    
-        textarea.addEventListener('keypress', async (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                button.click();
-            }
+        container.style.justifyContent = 'center';
+        container.style.alignItems = 'center';
+        container.style.zIndex = '20';
+        container.style.background = 'rgba(0, 0, 0, 0.7)';
+        container.style.backdropFilter = 'blur(5px)';
+        container.style.boxShadow = '0 -2px 10px rgba(0, 0, 0, 0.5)';
+        
+        const inputWrapper = document.createElement('div');
+        inputWrapper.style.display = 'flex';
+        inputWrapper.style.width = '90%';
+        inputWrapper.style.maxWidth = '800px';
+        inputWrapper.style.position = 'relative';
+        
+        // Crear input
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'Escribe un mensaje... (máx. 140 caracteres)';
+        input.maxLength = 140;
+        input.style.flex = '1';
+        input.style.padding = '12px 15px';
+        input.style.fontSize = '16px';
+        input.style.borderRadius = '30px';
+        input.style.border = '2px solid #FFFF00';
+        input.style.outline = 'none';
+        input.style.background = 'rgba(0, 0, 0, 0.6)';
+        input.style.color = '#FFFFFF';
+        input.style.transition = 'all 0.3s';
+        
+        // Contador de caracteres
+        const counter = document.createElement('div');
+        counter.style.position = 'absolute';
+        counter.style.right = '150px';
+        counter.style.top = '50%';
+        counter.style.transform = 'translateY(-50%)';
+        counter.style.color = '#FFFF00';
+        counter.style.fontSize = '12px';
+        counter.textContent = '0/140';
+        
+        // Actualizar contador de caracteres
+        input.addEventListener('input', () => {
+          const count = input.value.length;
+          counter.textContent = `${count}/140`;
+          
+          if (count > 100) {
+            counter.style.color = '#FF0000';
+          } else {
+            counter.style.color = '#FFFF00';
+          }
         });
-    
-        container.innerHTML = '';
-        container.append(textarea, button);
-        document.body.appendChild(container);
-    };
-    
-    // Alternar modo claro/oscuro
-    const toggleTheme = () => {
-        const currentTheme = localStorage.getItem('theme') || 'light';
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        document.body.style.background = newTheme === 'dark' ? '#222' : '#fff';
-        document.body.style.color = newTheme === 'dark' ? '#fff' : '#000';
-        localStorage.setItem('theme', newTheme);
-    };
-    
-    // Agregar botón de tema
-    const drawThemeButton = () => {
+        
+        // Estilo al enfocar
+        input.addEventListener('focus', () => {
+          input.style.boxShadow = '0 0 15px rgba(255, 255, 0, 0.5)';
+        });
+        
+        input.addEventListener('blur', () => {
+          input.style.boxShadow = 'none';
+        });
+        
+        // Botón de envío
         const button = document.createElement('button');
-        button.innerText = '🌙/☀️';
+        button.textContent = 'Send👻';
+        button.style.marginLeft = '10px';
+        button.style.padding = '12px 20px';
+        button.style.borderRadius = '30px';
+        button.style.border = 'none';
+        button.style.background = '#FFFF00';
+        button.style.color = '#000000';
+        button.style.fontSize = '16px';
+        button.style.fontWeight = 'bold';
+        button.style.cursor = 'pointer';
+        button.style.transition = 'all 0.3s';
+        
+        // Efectos del botón
+        button.addEventListener('mouseenter', () => {
+          button.style.transform = 'scale(1.1)';
+          button.style.boxShadow = '0 0 15px rgba(255, 255, 0, 0.7)';
+          button.textContent = 'Sending🎮';
+        });
+        
+        button.addEventListener('mouseleave', () => {
+          button.style.transform = 'scale(1)';
+          button.style.boxShadow = 'none';
+          button.textContent = 'Send👻';
+        });
+        
+        const sendMessage = async () => {
+          const text = input.value.trim();
+          
+          if (text) {
+            try {
+              await postMessage({ text, user: 'MiausUwu' });
+              input.value = '';
+              counter.textContent = '0/140';
+              await drawMessages();
+            } catch (error) {
+              console.error('Error al enviar mensaje:', error);
+            }
+          }
+        };
+        
+        button.addEventListener('click', sendMessage);
+        
+        // Enviar con Enter
+        input.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            sendMessage();
+          }
+        });
+        
+        // Otros elementos
+        inputWrapper.appendChild(input);
+        inputWrapper.appendChild(counter);
+        inputWrapper.appendChild(button);
+        container.appendChild(inputWrapper);
+        document.body.appendChild(container);
+      };
+      
+      // Botón modo oscuro/claro
+      const drawThemeButton = () => {
+        const button = document.createElement('button');
+        button.id = 'theme-button';
+        button.textContent = '🌙';
         button.style.position = 'fixed';
         button.style.top = '10px';
         button.style.right = '10px';
-        button.style.padding = '5px';
-        button.onclick = toggleTheme;
-    
+        button.style.width = '40px';
+        button.style.height = '40px';
+        button.style.borderRadius = '50%';
+        button.style.border = 'none';
+        button.style.background = '#FFFF00';
+        button.style.color = '#000000';
+        button.style.fontSize = '20px';
+        button.style.cursor = 'pointer';
+        button.style.zIndex = '30';
+        button.style.display = 'flex';
+        button.style.justifyContent = 'center';
+        button.style.alignItems = 'center';
+        button.style.boxShadow = '0 0 10px rgba(255, 255, 0, 0.5)';
+        button.style.transition = 'all 0.3s';
+        
+        button.addEventListener('mouseenter', () => {
+          button.style.transform = 'scale(1.1) rotate(45deg)';
+        });
+        
+        button.addEventListener('mouseleave', () => {
+          button.style.transform = 'scale(1) rotate(0deg)';
+        });
+        
+        button.addEventListener('click', toggleTheme);
+        
         document.body.appendChild(button);
-        toggleTheme();
-    };
-    
-    const main = async () => {
+      };
+
+      const toggleTheme = () => {
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        localStorage.setItem('theme', newTheme);
+        
+        const body = document.body;
+        const themeButton = document.getElementById('theme-button');
+        
+        if (newTheme === 'dark') {
+          body.style.background = '#000030';
+          body.style.color = '#FFFFFF';
+          themeButton.textContent = '🌙';
+          themeButton.style.background = '#FFFF00';
+          themeButton.style.color = '#000000';
+        } else {
+          body.style.background = '#87CEEB';
+          body.style.color = '#000000';
+          themeButton.textContent = '☀️';
+          themeButton.style.background = '#FFB847';
+          themeButton.style.color = '#000000';
+        }
+        
+        // Actualizar los mensajes
+        const messages = document.querySelectorAll('#messages-container li');
+        messages.forEach(msg => {
+          if (newTheme === 'dark') {
+            msg.style.background = 'rgba(0, 0, 0, 0.6)';
+            msg.style.color = '#FFFFFF';
+          } else {
+            msg.style.background = 'rgba(255, 255, 255, 0.6)';
+            msg.style.color = '#000000';
+          }
+        });
+      };
+      
+      // Agregar animaciones (Se consultó con claude como realizarlas, sino no se vizualizaba el chat)
+      const addAnimations = () => {
+        const style = document.createElement('style');
+        style.textContent = `
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          
+          @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+          }
+          
+          @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0); }
+          }
+          
+          @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+          }
+        `;
+        
+        document.head.appendChild(style);
+      };
+      
+      // Tema inicial
+      const setupInitialTheme = () => {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.body.style.background = savedTheme === 'dark' ? '#000030' : '#87CEEB';
+        document.body.style.color = savedTheme === 'dark' ? '#FFFFFF' : '#000000';
+      };
+      
+      // Función principal
+      const main = async () => {
+        createMainElements();
+        setupInitialTheme();
+        addAnimations();
+        createMaze();
+        createDots();
+        createGhosts();
+        createPacman();
         await drawMessages();
         drawInput();
         drawThemeButton();
-        setInterval(drawMessages, 5000); // Auto-refresh cada 5 segundos
-    };
-    
-    main();
-    
+        setInterval(async () => {
+          await drawMessages();
+        }, 5000);
+      };
+      
+      main();
     </script>
   </body>
 </html>
