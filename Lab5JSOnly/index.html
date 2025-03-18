@@ -86,7 +86,7 @@
         header.style.fontWeight = 'bold';
         header.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.5)';
         header.style.marginBottom = '10px';
-        header.textContent = 'CHAT de la class';
+        header.textContent = 'CHAT class';
         
         gameContainer.appendChild(header);
         document.body.appendChild(gameContainer);
@@ -449,7 +449,7 @@
         // Crear input
         const input = document.createElement('input');
         input.type = 'text';
-        input.placeholder = 'Escribe un mensaje... (máx. 140 caracteres)';
+        input.placeholder = 'Escribe un mensaje... (max. 140 caracteres)';
         input.maxLength = 140;
         input.style.flex = '1';
         input.style.padding = '12px 15px';
@@ -494,7 +494,7 @@
         
         // Botón de envío
         const button = document.createElement('button');
-        button.textContent = 'Send👻';
+        button.textContent = 'Send';
         button.style.marginLeft = '10px';
         button.style.padding = '12px 20px';
         button.style.borderRadius = '30px';
@@ -510,13 +510,13 @@
         button.addEventListener('mouseenter', () => {
           button.style.transform = 'scale(1.1)';
           button.style.boxShadow = '0 0 15px rgba(255, 255, 0, 0.7)';
-          button.textContent = 'Sending🎮';
+          button.textContent = 'Sending';
         });
         
         button.addEventListener('mouseleave', () => {
           button.style.transform = 'scale(1)';
           button.style.boxShadow = 'none';
-          button.textContent = 'Send👻';
+          button.textContent = 'Send';
         });
         
         const sendMessage = async () => {
@@ -556,7 +556,7 @@
       const drawThemeButton = () => {
         const button = document.createElement('button');
         button.id = 'theme-button';
-        button.textContent = '🌙';
+        button.textContent = 'Dark';
         button.style.position = 'fixed';
         button.style.top = '10px';
         button.style.right = '10px';
@@ -566,7 +566,7 @@
         button.style.border = 'none';
         button.style.background = '#FFFF00';
         button.style.color = '#000000';
-        button.style.fontSize = '20px';
+        button.style.fontSize = '14px';
         button.style.cursor = 'pointer';
         button.style.zIndex = '30';
         button.style.display = 'flex';
@@ -600,13 +600,13 @@
         if (newTheme === 'dark') {
           body.style.background = '#000030';
           body.style.color = '#FFFFFF';
-          themeButton.textContent = '🌙';
+          themeButton.textContent = 'Dark';
           themeButton.style.background = '#FFFF00';
           themeButton.style.color = '#000000';
         } else {
           body.style.background = '#87CEEB';
           body.style.color = '#000000';
-          themeButton.textContent = '☀️';
+          themeButton.textContent = 'Light';
           themeButton.style.background = '#FFB847';
           themeButton.style.color = '#000000';
         }
