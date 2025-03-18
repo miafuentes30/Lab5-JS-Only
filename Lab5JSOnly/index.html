@@ -279,10 +279,12 @@
         styleSheet.innerHTML = keyframes;
         document.head.appendChild(styleSheet);
       
-        // Ajustar el color de la boca según el tema (claude)
+        // Función para actualizar el color de la boca según el tema (claude)
         const updateMouthColor = () => {
           const theme = localStorage.getItem('theme') || 'dark';
-          pacmanMouth.style.borderRight = theme === 'dark' ? '20px solid #000030' : '20px solid #87CEEB';
+          pacmanMouth.style.borderRight = theme === 'dark' 
+            ? '20px solid #000030'  // Color para modo oscuro
+            : '20px solid #87CEEB'; // Color para modo claro
         };
       
         updateMouthColor();
@@ -620,8 +622,13 @@
             msg.style.color = '#000000';
           }
         });
+
+        // Crear y disparar un evento personalizado para notificar el cambio de tema (claude para cambios en la boca de pac man)
+        const themeEvent = new CustomEvent('themeChanged', { detail: { theme: newTheme } });
+        document.dispatchEvent(themeEvent);
       };
       
+
       // Agregar animaciones (Se consultó con claude como realizarlas, sino no se vizualizaba el chat)
       const addAnimations = () => {
         const style = document.createElement('style');
